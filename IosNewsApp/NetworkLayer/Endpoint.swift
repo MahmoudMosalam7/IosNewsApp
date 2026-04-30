@@ -25,7 +25,7 @@ enum Endpoint : APIConfiguration {
     
     var header: [String : Any]?{
         switch self {
-        case .getNewsByCountries(let countryCode):
+        case .getNewsByCountries:
             return nil
             
         }
