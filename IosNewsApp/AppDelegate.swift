@@ -17,6 +17,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
 
+    func makeRootTabBarController() -> UITabBarController {
+        let tabBarController = UITabBarController()
+
+        let homeVC = ViewController()
+        homeVC.tabBarItem = UITabBarItem(
+            title: "Home",
+            image: UIImage(systemName: "house"),
+            selectedImage: UIImage(systemName: "house.fill")
+        )
+        let bookmarkVC = NewsMarkVC()
+        bookmarkVC.tabBarItem = UITabBarItem(
+            title: "Saved",
+            image: UIImage(systemName: "bookmark"),
+            selectedImage: UIImage(systemName: "bookmark.fill")
+        )
+        tabBarController.viewControllers = [
+            UINavigationController(rootViewController: homeVC),
+            UINavigationController(rootViewController: bookmarkVC)
+        ]
+
+        return tabBarController
+    }
+
     // MARK: UISceneSession Lifecycle
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
@@ -33,4 +56,3 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
 }
-
