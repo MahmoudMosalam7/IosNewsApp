@@ -6,3 +6,8 @@
 //
 
 import Foundation
+enum Section: Int, CaseIterable {
+    case header
+    case horizontal
+    case list
+}
