@@ -6,14 +6,27 @@
 //
 
 import UIKit
+import Combine
 
 class ViewController: UIViewController {
     private var collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())
-    
+    private lazy var viewModel = MainViewModel()
+    private var cancellables = Set<AnyCancellable>()
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         setupCollectionView()
+        setupBinders()
+        viewModel.getNews()
+    }
+    
+    func setupBinders(){
+        viewModel.$articles
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.collectionView.reloadData()
+            }
+            .store(in: &cancellables)
     }
     
     func setupCollectionView(){
@@ -93,9 +106,9 @@ extension ViewController :  UICollectionViewDelegate, UICollectionViewDataSource
         case .header:
             return 1
         case .horizontal:
-            return 10
+            return viewModel.countries.count
         case .list:
-            return 10
+            return viewModel.articles.count
         }
     }
     
@@ -117,29 +130,41 @@ extension ViewController :  UICollectionViewDelegate, UICollectionViewDataSource
             ) as? HorizontalCountriesButtonCollectionViewCell else {
                 return UICollectionViewCell()
             }
-            cell.Setup(country: "Country \(indexPath.row)")
+            let country = viewModel.countries[indexPath.row]
+            cell.Setup(country: country.uppercased())
             return cell
         case .list:
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ListCell",for: indexPath) as? NewsCardCollectionViewCell else {
                 return UICollectionViewCell()
             }
-            return verticalScrolling(cell: cell, row: indexPath.row)
+            let article = viewModel.articles[indexPath.row]
+            return verticalScrolling(cell: cell, article: article, row: indexPath.row)
         }
     }
-    
-    private func verticalScrolling(cell : NewsCardCollectionViewCell,row: Int)->NewsCardCollectionViewCell{
-        // Handle image tap
-        imageTapped(cell:cell, row : row)
-        // Handle save button tap
-        saveButtonTapped(cell:cell, row : row)
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        
+        let section = Section(rawValue: indexPath.section)
+        
+        if section == .horizontal {
+            let selectedCountry = viewModel.countries[indexPath.row]
+            viewModel.getNews(country: selectedCountry)   // 🔥 CALL API AGAIN
+        }
+    }
+    private func verticalScrolling(cell: NewsCardCollectionViewCell, article: Article, row: Int) -> NewsCardCollectionViewCell {
+        
+        imageTapped(cell: cell, row: row)
+        saveButtonTapped(cell: cell, row: row)
+        
         cell.setup(
-            title: "News \(row)",
-            subtitle: "Author \(row)",
-            imageURL: "",
-            publishedAt: "123"
+            title: article.title,
+            subtitle: article.author ?? "Unknown",
+            imageURL: article.urlToImage ?? "",
+            publishedAt: article.publishedAt
         )
+        
         return cell
     }
+    
     private func imageTapped(cell : NewsCardCollectionViewCell,row: Int){
         cell.onImageTapped = { [weak self] in
             print("Image tapped at index: \(row)")
