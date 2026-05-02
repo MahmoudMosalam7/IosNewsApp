@@ -70,11 +70,18 @@ class NewsCardCollectionViewCell: UICollectionViewCell {
         subtitleLabel.font = .systemFont(ofSize: 14)
     }
     
-    func setupImage(imageURL: String,){
+    func setupImage(imageURL: String?) {
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 8
-        imageView.kf.setImage(with: URL(string: "https://picsum.photos/400/200"))
+        let placeholder = UIImage(named: "news")
+        if let urlString = imageURL,
+           let url = URL(string: urlString),
+           !urlString.isEmpty {
+            imageView.kf.setImage(with: url,placeholder: placeholder,options: [.transition(.fade(0.3))])
+        } else {
+            imageView.image = placeholder
+        }
         imageView.isUserInteractionEnabled = true
         let imageTapGesture = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
         imageView.addGestureRecognizer(imageTapGesture)
