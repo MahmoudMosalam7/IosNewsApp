@@ -1,0 +1,13 @@
+//
+//  Section.swift
+//  IosNewsApp
+//
+//  Created by Mahmoud Mosalam on 02/05/2026.
+//
+
+import Foundation
+enum Section: Int, CaseIterable {
+    case header
+    case horizontal
+    case list
+}
