@@ -25,12 +25,13 @@ class NewsDetailsVC: UIViewController {
     private let padding: CGFloat = 16
     private let spacing: CGFloat = 12
     var article : Article? 
-    
+    private lazy var viewModel = NewsDetailsViewModel()
     override func viewDidLoad() {
         super.viewDidLoad()
         setupAllViews()
         if let article = article {
             populateTitleAndMeta(article : article)
+            viewModel.saveArticle(article: article)
         } else {
             print("No article data")
         }
