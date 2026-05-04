@@ -12,6 +12,8 @@ class ViewController: UIViewController {
     private var collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())
     private lazy var viewModel = MainViewModel()
     private var cancellables = Set<AnyCancellable>()
+    private let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -151,26 +153,22 @@ extension ViewController :  UICollectionViewDelegate, UICollectionViewDataSource
         }
     }
     private func verticalScrolling(cell: NewsCardCollectionViewCell, article: Article, row: Int) -> NewsCardCollectionViewCell {
-        
         imageTapped(cell: cell, row: row)
         saveButtonTapped(cell: cell, row: row)
-        
         cell.setup(
             title: article.title,
             subtitle: article.author ?? "Unknown",
             imageURL: article.urlToImage ?? "",
             publishedAt: article.publishedAt
         )
-        
         return cell
     }
     
     private func imageTapped(cell : NewsCardCollectionViewCell,row: Int){
         cell.onImageTapped = { [weak self] in
-            print("Image tapped at index: \(row)")
-            let alert = UIAlertController(title: "News Details", message: "You tapped News \(row) image", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            self?.present(alert, animated: true)
+            if let destinationVC = self?.mainStoryboard.instantiateViewController(withIdentifier: "NewsDetailsVC") as? NewsDetailsVC {
+                self?.navigationController?.pushViewController(destinationVC, animated: true)
+            }
         }
     }
     private func saveButtonTapped(cell : NewsCardCollectionViewCell,row: Int){
