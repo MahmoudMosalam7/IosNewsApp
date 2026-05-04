@@ -7,6 +7,7 @@
 
 import UIKit
 import Kingfisher
+import Combine
 
 class NewsDetailsVC: UIViewController {
     private let scrollView = UIScrollView()
@@ -26,12 +27,14 @@ class NewsDetailsVC: UIViewController {
     private let spacing: CGFloat = 12
     var article : Article? 
     private lazy var viewModel = NewsDetailsViewModel()
+    private var cancellables = Set<AnyCancellable>()
     override func viewDidLoad() {
         super.viewDidLoad()
+        bindViewModel()
         setupAllViews()
         if let article = article {
             populateTitleAndMeta(article : article)
-            viewModel.fetchArt()
+            viewModel.configure(article: article)
         } else {
             print("No article data")
         }
@@ -266,7 +269,16 @@ class NewsDetailsVC: UIViewController {
     }
     
     @objc private func toggleBookmark() {
-        bookmarkButton.isSelected = !bookmarkButton.isSelected
+        viewModel.toggleBookmark()
+    }
+
+    private func bindViewModel() {
+        viewModel.$isBookmarked
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isBookmarked in
+                self?.bookmarkButton.isSelected = isBookmarked
+            }
+            .store(in: &cancellables)
     }
 
     private func populateTitleAndMeta(article : Article) {

@@ -69,4 +69,20 @@ final class CoreDataManager {
             }
         }
     }
+    
+    func delete(object: NSManagedObject) async -> Result<Bool, CoreDataError> {
+            let objectID = object.objectID
+        
+            return await context.perform {
+                do {
+                    let managedObject = try self.context.existingObject(with: objectID)
+                    self.context.delete(managedObject)
+                
+                    try self.context.save()
+                    return .success(true)
+                } catch {
+                    return .failure(.deleteFailed)
+                }
+            }
+        }
 }
