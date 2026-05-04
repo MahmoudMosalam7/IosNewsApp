@@ -31,7 +31,7 @@ class NewsDetailsVC: UIViewController {
         setupAllViews()
         if let article = article {
             populateTitleAndMeta(article : article)
-            viewModel.saveArticle(article: article)
+            viewModel.fetchArt()
         } else {
             print("No article data")
         }

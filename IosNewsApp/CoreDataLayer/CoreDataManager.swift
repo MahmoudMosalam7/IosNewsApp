@@ -53,4 +53,20 @@ final class CoreDataManager {
             }
         }
     }
+    
+    func fetch<T: NSManagedObject>(
+        entityName: String
+    ) async -> Result<[T], CoreDataError> {
+        
+        await context.perform {
+            let request = NSFetchRequest<T>(entityName: entityName)
+            
+            do {
+                let data = try self.context.fetch(request)
+                return .success(data)
+            } catch {
+                return .failure(.fetchFailed)
+            }
+        }
+    }
 }

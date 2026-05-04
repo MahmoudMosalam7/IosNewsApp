@@ -15,19 +15,18 @@ class NewsDetailsViewModel: ObservableObject {
         Task {
             let result = await CoreDataManager.shared.save(
                 entityName: CoreDataConstants.newsEntity
-            ) { (entity: NSManagedObject) in
-                entity.setValue(UUID(), forKey: CoreDataConstants.newsID)
-                entity.setValue(article.title, forKey: CoreDataConstants.title)
-                entity.setValue(article.author, forKey: CoreDataConstants.author)
-                entity.setValue(article.description, forKey: CoreDataConstants.desc)
-                entity.setValue(article.url, forKey: CoreDataConstants.url)
-                entity.setValue(article.urlToImage, forKey: CoreDataConstants.urlToImage)
-                entity.setValue(article.publishedAt, forKey: CoreDataConstants.publishedAt)
-                entity.setValue(article.content, forKey: CoreDataConstants.content)
-                entity.setValue(article.source.name, forKey: CoreDataConstants.sourceName)
-                entity.setValue(article.source.id, forKey: CoreDataConstants.sourceId)
+            ) { (entity: News) in
+                entity.newsID = UUID()
+                entity.title = article.title
+                entity.author = article.author
+                entity.newsDescription = article.description
+                entity.url = article.url
+                entity.urlToImage = article.urlToImage
+                entity.publishedAt = article.publishedAt
+                entity.content = article.content
+                entity.sourceName = article.source.name
+                entity.sourceID = article.source.id
             }
-            
             switch result {
             case .success:
                 print("Saved successfully")
@@ -36,4 +35,19 @@ class NewsDetailsViewModel: ObservableObject {
             }
         }
     }
+    
+//    func fetchArt(){
+//        Task{
+//            let result: Result<[News], CoreDataError> = await CoreDataManager.shared.fetch(
+//                entityName: CoreDataConstants.newsEntity
+//            )
+//            switch result {
+//            case .success(let newsItems):
+//                let articles = newsItems.map(\.article)
+//                print("Saved \(articles)")
+//            case .failure(let error):
+//                print("Error: \(error)")
+//            }
+//        }
+//    }
 }
