@@ -13,11 +13,16 @@ class NewsCardCollectionViewCell: UICollectionViewCell {
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
     private let publishedDateLabel = UILabel()
-    private let saveButton = UIButton()
-    // Closures for click handlers
-    var onImageTapped: (() -> Void)?
-    var onSaveButtonTapped: (() -> Void)?
-        
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupView()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupView()
+    }
     func setup(
         title : String,
         subtitle: String,
@@ -25,48 +30,53 @@ class NewsCardCollectionViewCell: UICollectionViewCell {
         publishedAt: String
         
     ){
-        setupView()
         setupTitle(title : title)
         setupDate(date : publishedAt)
         setupSubTitle(subtitle : subtitle)
         setupImage(imageURL :imageURL)
-        setupButtonSave()
         
     }
-    func setupView(){
-        let titleAndDateStack = UIStackView(arrangedSubviews: [titleLabel, publishedDateLabel])
-        titleAndDateStack.axis = .horizontal
-        titleAndDateStack.distribution = .equalSpacing
-        let bottomStack = UIStackView(arrangedSubviews: [subtitleLabel, saveButton])
-        bottomStack.axis = .horizontal
-        bottomStack.distribution = .equalSpacing
-        let stack = UIStackView(arrangedSubviews: [imageView, titleAndDateStack, bottomStack])
+    
+    func setupView() {
+        let titleStack = UIStackView(arrangedSubviews: [titleLabel, publishedDateLabel])
+        titleStack.axis = .vertical
+        titleStack.spacing = 2
+        let stack = UIStackView(arrangedSubviews: [
+            imageView,
+            titleStack,
+            subtitleLabel
+        ])
         stack.axis = .vertical
-        stack.spacing = 8
+        stack.spacing = 6
+        stack.distribution = .fill
         contentView.addSubview(stack)
         stack.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             stack.topAnchor.constraint(equalTo: contentView.topAnchor),
             stack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             stack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            imageView.heightAnchor.constraint(equalToConstant: 300),
-            saveButton.widthAnchor.constraint(equalToConstant: 60)
+            stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16),
+            imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: 0.6)
         ])
+        imageView.setContentHuggingPriority(.defaultLow, for: .vertical)
+    
     }
     
     func setupTitle(title : String){
         titleLabel.font = .boldSystemFont(ofSize: 18)
         titleLabel.text = title
+        titleLabel.numberOfLines = 2
     }
     
     func setupDate(date : String){
         publishedDateLabel.text = date
+        publishedDateLabel.textColor = .gray
         publishedDateLabel.font = .systemFont(ofSize: 14)
     }
     
     func setupSubTitle(subtitle : String){
         subtitleLabel.text = subtitle
+        subtitleLabel.numberOfLines = 1
         subtitleLabel.font = .systemFont(ofSize: 14)
     }
     
@@ -82,24 +92,8 @@ class NewsCardCollectionViewCell: UICollectionViewCell {
         } else {
             imageView.image = placeholder
         }
-        imageView.isUserInteractionEnabled = true
-        let imageTapGesture = UITapGestureRecognizer(target: self, action: #selector(imageTapped))
-        imageView.addGestureRecognizer(imageTapGesture)
+        
     }
     
-    func setupButtonSave(){
-        saveButton.setTitle("Save", for: .normal)
-        saveButton.setTitleColor(.systemBlue, for: .normal)
-        saveButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
-        saveButton.setContentHuggingPriority(.required, for: .vertical)
-        saveButton.addTarget(self, action: #selector(saveButtonTapped), for: .touchUpInside)
-    }
     
-    @objc private func imageTapped() {
-        onImageTapped?()
-    }
-    
-    @objc private func saveButtonTapped() {
-        onSaveButtonTapped?()
-    }
 }

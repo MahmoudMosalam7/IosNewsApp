@@ -86,11 +86,18 @@ class ViewController: UIViewController {
     
     
     func createListSection() -> NSCollectionLayoutSection {
-           let item = CompositionalHelper.createItem(width: .fractionalWidth(1), height: .estimated(380), topSpacing: 8, bottomSpacing: 8, leadingSpacing: 8, trailingSpacing: 8)
-           let group = CompositionalHelper.createGroup(alignment: .vertical, width: .fractionalWidth(1), height: .estimated(380), items: [item], interItemSpacing: 8)
-           let section = NSCollectionLayoutSection(group: group)
-           return section
-       }
+        let item = CompositionalHelper.createItem(width: .fractionalWidth(1), height: .fractionalHeight(1), topSpacing: 0, bottomSpacing: 0, leadingSpacing: 0, trailingSpacing: 0)
+        let group = CompositionalHelper.createGroup(alignment: .vertical, width: .fractionalWidth(1), height: .fractionalHeight(0.5), items: [item], interItemSpacing: 0)
+        let section = NSCollectionLayoutSection(group: group)
+        section.interGroupSpacing = 16  
+        section.contentInsets = NSDirectionalEdgeInsets(
+            top: 16,
+            leading: 0,
+            bottom: 16,
+            trailing: 0
+        )
+        return section
+    }
 
 
 }
@@ -149,10 +156,15 @@ extension ViewController :  UICollectionViewDelegate, UICollectionViewDataSource
             let selectedCountry = viewModel.countries[indexPath.row]
             viewModel.getNews(country: selectedCountry)
         }
+        if section == .list {
+            let article = viewModel.articles[indexPath.row]
+            if let destinationVC = self.mainStoryboard.instantiateViewController(withIdentifier: "NewsDetailsVC") as? NewsDetailsVC {
+                destinationVC.article = article
+                self.navigationController?.pushViewController(destinationVC, animated: true)
+            }
+        }
     }
     private func verticalScrolling(cell: NewsCardCollectionViewCell, article: Article, row: Int) -> NewsCardCollectionViewCell {
-        imageTapped(cell: cell, row: row)
-        saveButtonTapped(cell: cell, row: row)
         cell.setup(
             title: article.title,
             subtitle: article.author ?? "Unknown",
@@ -160,23 +172,5 @@ extension ViewController :  UICollectionViewDelegate, UICollectionViewDataSource
             publishedAt: article.publishedAt
         )
         return cell
-    }
-    
-    private func imageTapped(cell : NewsCardCollectionViewCell,row: Int){
-        let article = viewModel.articles[row]
-        cell.onImageTapped = { [weak self] in
-            if let destinationVC = self?.mainStoryboard.instantiateViewController(withIdentifier: "NewsDetailsVC") as? NewsDetailsVC {
-                destinationVC.article = article
-                self?.navigationController?.pushViewController(destinationVC, animated: true)
-            }
-        }
-    }
-    private func saveButtonTapped(cell : NewsCardCollectionViewCell,row: Int){
-        cell.onSaveButtonTapped = { [weak self] in
-            print("Save button tapped at index: \(row)")
-            let alert = UIAlertController(title: "Saved", message: "News \(row) has been saved!", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            self?.present(alert, animated: true)
-        }
     }
 }
