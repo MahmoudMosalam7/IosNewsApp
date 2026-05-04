@@ -8,6 +8,7 @@
 import Foundation
 struct Article: Codable {
     let source: Source
+    let newsId: UUID?
     let author: String?
     let title: String
     let description: String?
