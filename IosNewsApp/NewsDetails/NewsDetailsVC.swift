@@ -23,9 +23,15 @@ class NewsDetailsVC: UIViewController {
     private let metaStackView = UIStackView()
     private let padding: CGFloat = 16
     private let spacing: CGFloat = 12
+    var article : Article? 
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        if let article = article {
+            print("Has data: \(article)")
+        } else {
+            print("No article data")
+        }
         setupAllViews()
         populateTitleAndMeta()
         populateDescriptionAndContent()

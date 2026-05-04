@@ -144,12 +144,10 @@ extension ViewController :  UICollectionViewDelegate, UICollectionViewDataSource
         }
     }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
         let section = Section(rawValue: indexPath.section)
-        
         if section == .horizontal {
             let selectedCountry = viewModel.countries[indexPath.row]
-            viewModel.getNews(country: selectedCountry)   // 🔥 CALL API AGAIN
+            viewModel.getNews(country: selectedCountry)
         }
     }
     private func verticalScrolling(cell: NewsCardCollectionViewCell, article: Article, row: Int) -> NewsCardCollectionViewCell {
@@ -165,8 +163,10 @@ extension ViewController :  UICollectionViewDelegate, UICollectionViewDataSource
     }
     
     private func imageTapped(cell : NewsCardCollectionViewCell,row: Int){
+        let article = viewModel.articles[row]
         cell.onImageTapped = { [weak self] in
             if let destinationVC = self?.mainStoryboard.instantiateViewController(withIdentifier: "NewsDetailsVC") as? NewsDetailsVC {
+                destinationVC.article = article
                 self?.navigationController?.pushViewController(destinationVC, animated: true)
             }
         }
