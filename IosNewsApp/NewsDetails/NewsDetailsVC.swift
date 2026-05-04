@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Kingfisher
 
 class NewsDetailsVC: UIViewController {
     private let scrollView = UIScrollView()
@@ -27,14 +28,12 @@ class NewsDetailsVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupAllViews()
         if let article = article {
-            print("Has data: \(article)")
+            populateTitleAndMeta(article : article)
         } else {
             print("No article data")
         }
-        setupAllViews()
-        populateTitleAndMeta()
-        populateDescriptionAndContent()
     }
     
     private func setupAllViews() {
@@ -259,11 +258,9 @@ class NewsDetailsVC: UIViewController {
     private func addArrangedSubviews() {
         metaStackView.addArrangedSubview(nameLabel)
         metaStackView.addArrangedSubview(authorLabel)
-        
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         metaStackView.addArrangedSubview(spacer)
-        
         metaStackView.addArrangedSubview(bookmarkButton)
     }
     
@@ -271,15 +268,21 @@ class NewsDetailsVC: UIViewController {
         bookmarkButton.isSelected = !bookmarkButton.isSelected
     }
 
-    private func populateTitleAndMeta() {
-        titleLabel.text = "Breaking News: Major Technology Breakthrough"
-        nameLabel.text = "TechNews Daily"
-        authorLabel.text = "By John Developer"
-        publishedLabel.text = "Published: May 2, 2026"
+    private func populateTitleAndMeta(article : Article) {
+        let placeholder = UIImage(named: "news")
+        if let urlString = article.urlToImage,
+           let url = URL(string: urlString),
+           !urlString.isEmpty {
+            imageView.kf.setImage(with: url,placeholder: placeholder,options: [.transition(.fade(0.3))])
+        } else {
+            imageView.image = placeholder
+        }
+        titleLabel.text = article.title
+        nameLabel.text = article.source.name
+        authorLabel.text = article.author
+        publishedLabel.text = article.publishedAt
+        descriptionLabel.text = article.description
+        contentLabel.text = article.content
     }
-    
-    private func populateDescriptionAndContent() {
-        descriptionLabel.text = "A groundbreaking development in artificial intelligence has been unveiled today, marking a significant milestone."
-        contentLabel.text = "Scientists have created a new framework improving existing models by 40% in speed and accuracy."
-    }
+
 }
