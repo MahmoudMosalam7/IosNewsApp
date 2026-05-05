@@ -12,12 +12,18 @@ class NewsMarkVC: UIViewController {
     private var collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())
     private lazy var viewModel = NewsMarkViewModel()
     private var cancellables = Set<AnyCancellable>()
+    private let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
         viewModel.fetchNews()
         setupBinders()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.fetchNews()
     }
     
     func setupCollectionView(){
@@ -78,6 +84,13 @@ class NewsMarkVC: UIViewController {
                 self?.collectionView.reloadData()
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: CoreDataManager.didChangeSavedNews)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.viewModel.fetchNews()
+            }
+            .store(in: &cancellables)
     }
 }
 
@@ -120,6 +133,17 @@ extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
             return verticalScrolling(cell: cell, row: indexPath.row)
         }
         
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let section = Section(rawValue: indexPath.section)
+        if section == .list {
+            let article = viewModel.articles[indexPath.row]
+            if let destinationVC = self.mainStoryboard.instantiateViewController(withIdentifier: "NewsDetailsVC") as? NewsDetailsVC {
+                destinationVC.article = article
+                self.navigationController?.pushViewController(destinationVC, animated: true)
+            }
+        }
     }
     
     private func verticalScrolling(cell: NewsCardCollectionViewCell, row: Int) -> NewsCardCollectionViewCell {
