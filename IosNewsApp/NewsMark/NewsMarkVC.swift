@@ -6,14 +6,20 @@
 //
 
 import UIKit
+import Combine
 
 class NewsMarkVC: UIViewController {
     private var collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())
+    private lazy var viewModel = NewsMarkViewModel()
+    private var cancellables = Set<AnyCancellable>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
+        viewModel.fetchNews()
+        setupBinders()
     }
+    
     func setupCollectionView(){
         view.addSubview(collectionView)
         collectionView.delegate = self
@@ -29,6 +35,7 @@ class NewsMarkVC: UIViewController {
         collectionView.register(HeaderCollectionViewCell.self, forCellWithReuseIdentifier: "HeaderCell")
         collectionView.register(NewsCardCollectionViewCell.self, forCellWithReuseIdentifier: "ListCell")
     }
+    
     func createLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { sectionIndex, _ in
             guard let section = Section(rawValue: sectionIndex) else { return nil }
@@ -64,6 +71,14 @@ class NewsMarkVC: UIViewController {
         return section
     }
 
+    func setupBinders(){
+        viewModel.$articles
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.collectionView.reloadData()
+            }
+            .store(in: &cancellables)
+    }
 }
 
 extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
@@ -80,7 +95,7 @@ extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
         case .horizontal:
             return 0
         case .list:
-            return 10
+            return viewModel.articles.count
         }
     }
     
@@ -108,11 +123,12 @@ extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
     }
     
     private func verticalScrolling(cell: NewsCardCollectionViewCell, row: Int) -> NewsCardCollectionViewCell {
+        let article = viewModel.articles[row]
         cell.setup(
-            title: "mahmoud",
-            subtitle: "article.author" ?? "Unknown",
-            imageURL: "article.urlToImage" ?? "",
-            publishedAt: "article.publishedAt"
+            title: article.title,
+            subtitle: article.author ?? "Unknown",
+            imageURL: article.urlToImage ?? "",
+            publishedAt: article.publishedAt
         )
         return cell
     }
