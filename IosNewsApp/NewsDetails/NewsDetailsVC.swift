@@ -28,6 +28,7 @@ class NewsDetailsVC: UIViewController {
     var article : Article? 
     private lazy var viewModel = NewsDetailsViewModel()
     private var cancellables = Set<AnyCancellable>()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         bindViewModel()

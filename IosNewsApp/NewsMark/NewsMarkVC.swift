@@ -13,12 +13,15 @@ class NewsMarkVC: UIViewController {
     private lazy var viewModel = NewsMarkViewModel()
     private var cancellables = Set<AnyCancellable>()
     private let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
+    private let errorView = ErrorView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
         viewModel.fetchNews()
         setupBinders()
+        setupErrorView()
+        setupErrorbinders()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -92,6 +95,37 @@ class NewsMarkVC: UIViewController {
             }
             .store(in: &cancellables)
     }
+    
+    func setupErrorView() {
+        view.addSubview(errorView)
+        errorView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            errorView.topAnchor.constraint(equalTo: view.topAnchor),
+            errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        errorView.onRetry = { [weak self] in
+            self?.viewModel.fetchNews()
+        }
+    }
+    
+    func setupErrorbinders() {
+        viewModel.$error
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in
+                guard let self = self else { return }
+                if let error = error {
+                    self.errorView.show(message: error)
+                    self.collectionView.isHidden = true
+                } else {
+                    self.errorView.hide()
+                    self.collectionView.isHidden = false
+                }
+            }
+            .store(in: &cancellables)
+    }
+
 }
 
 extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
