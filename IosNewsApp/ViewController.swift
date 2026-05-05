@@ -13,9 +13,7 @@ class ViewController: UIViewController {
     private lazy var viewModel = MainViewModel()
     private var cancellables = Set<AnyCancellable>()
     private let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
-    private let errorLabel = UILabel()
-    private let retryButton = UIButton(type: .system)
-    private let errorStack = UIStackView()
+    private let errorView = ErrorView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -105,52 +103,33 @@ class ViewController: UIViewController {
     }
     
     func setupErrorView() {
-        errorLabel.textAlignment = .center
-        errorLabel.textColor = .systemRed
-        errorLabel.numberOfLines = 0
-        retryButton.setTitle("Retry", for: .normal)
-        retryButton.addTarget(self, action: #selector(didTapRetry), for: .touchUpInside)
-        errorStack.axis = .vertical
-        errorStack.spacing = 12
-        errorStack.alignment = .center
-        errorStack.isHidden = true
-        errorStack.addArrangedSubview(errorLabel)
-        errorStack.addArrangedSubview(retryButton)
-        view.addSubview(errorStack)
-        errorStack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(errorView)
+        errorView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            errorStack.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            errorStack.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            errorView.topAnchor.constraint(equalTo: view.topAnchor),
+            errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+        errorView.onRetry = { [weak self] in
+            self?.viewModel.getNews()
+        }
     }
     
-    @objc func didTapRetry() {
-        viewModel.getNews()
-    }
-    
-    func setupErrorbinders(){
+    func setupErrorbinders() {
         viewModel.$error
             .receive(on: DispatchQueue.main)
             .sink { [weak self] error in
                 guard let self = self else { return }
                 if let error = error {
-                    self.showErrorView(message: error)
+                    self.errorView.show(message: error)
+                    self.collectionView.isHidden = true
                 } else {
-                    self.hideErrorView()
+                    self.errorView.hide()
+                    self.collectionView.isHidden = false
                 }
             }
             .store(in: &cancellables)
-    }
-    
-    func showErrorView(message: String) {
-        errorLabel.text = message
-        errorStack.isHidden = false
-        collectionView.isHidden = true
-    }
-
-    func hideErrorView() {
-        errorStack.isHidden = true
-        collectionView.isHidden = false
     }
 
 }
