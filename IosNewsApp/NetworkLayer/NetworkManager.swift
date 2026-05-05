@@ -12,7 +12,6 @@ class NetworkManager {
     private lazy var session: URLSession = {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
-        config.waitsForConnectivity = true
         return URLSession(configuration: config)
     }()
     
@@ -56,7 +55,7 @@ class NetworkManager {
             let (data, response) = try await session.data(for: request)
             return await handleResponse(data: data, response: response)
         } catch {
-            return .failure(.unknown(error))
+            return .failure(handleError(error))
         }
     }
     
@@ -83,7 +82,7 @@ class NetworkManager {
             let (data, response) = try await session.data(for: request)
             return await handleResponse(data: data, response: response)
         } catch {
-            return .failure(.unknown(error))
+            return .failure(handleError(error))
         }
     }
     func put<T: Codable>(
@@ -113,7 +112,7 @@ class NetworkManager {
             return await handleResponse(data: data, response: response)
                     
         } catch {
-                return .failure(.unknown(error))
+            return .failure(handleError(error))
         }
     }
     
@@ -134,7 +133,7 @@ class NetworkManager {
                let (data, response) = try await session.data(for: request)
                return await handleResponse(data: data, response: response)
            } catch {
-               return .failure(.unknown(error))
+               return .failure(handleError(error))
            }
        }
     
@@ -157,7 +156,22 @@ class NetworkManager {
         } catch let decodingError as DecodingError {
             return .failure(.decodingError(decodingError))
         } catch {
-            return .failure(.unknown(error))
+            return .failure(handleError(error))
         }
+    }
+    
+    private func handleError(_ error: Error) -> NetworkError {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet:
+                return .noInternetConnection
+            case .timedOut:
+                return .timeOut
+            default:
+                return .requestError
+            }
+        }
+
+        return .unknown(error)
     }
 }
