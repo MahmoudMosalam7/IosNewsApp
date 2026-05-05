@@ -14,11 +14,13 @@ class ViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     private let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
     private let errorView = ErrorView()
+    private var didSelectCountry = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         setupCollectionView()
+        setupCollectionViewCell()
         setupErrorView()
         setupBinders()
         setupErrorbinders()
@@ -46,9 +48,14 @@ class ViewController: UIViewController {
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
+    }
+    
+    func setupCollectionViewCell(){
         collectionView.register(HeaderCollectionViewCell.self, forCellWithReuseIdentifier: "HeaderCell")
         collectionView.register(HorizontalCountriesButtonCollectionViewCell.self, forCellWithReuseIdentifier: "HorizontalCell")
         collectionView.register(NewsCardCollectionViewCell.self, forCellWithReuseIdentifier: "ListCell")
+        collectionView.register(EmptyCollectionViewCell.self, forCellWithReuseIdentifier: "EmptyCell")
+        collectionView.register(EmptyCollectionViewCell.self, forCellWithReuseIdentifier: "EmptyCell")
     }
     
     func createLayout() -> UICollectionViewCompositionalLayout {
@@ -111,6 +118,7 @@ class ViewController: UIViewController {
             errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+
         errorView.onRetry = { [weak self] in
             self?.viewModel.getNews()
         }
@@ -139,16 +147,18 @@ extension ViewController :  UICollectionViewDelegate, UICollectionViewDataSource
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return Section.allCases.count
     }
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        
         let sectionType = Section(rawValue: section)!
-        
         switch sectionType {
         case .header:
             return 1
         case .horizontal:
             return viewModel.countries.count
         case .list:
+            if didSelectCountry && viewModel.articles.isEmpty {
+                return 1
+            }
             return viewModel.articles.count
         }
     }
@@ -159,33 +169,78 @@ extension ViewController :  UICollectionViewDelegate, UICollectionViewDataSource
         }
         switch section {
         case .header:
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "HeaderCell",for: indexPath) as? HeaderCollectionViewCell else {
-                return UICollectionViewCell()
-            }
-            cell.setup(title: "Top News")
-            return cell
+            return makeHeaderCell(collectionView, indexPath: indexPath)
+            
         case .horizontal:
-            guard let cell = collectionView.dequeueReusableCell(
-                withReuseIdentifier: "HorizontalCell",
-                for: indexPath
-            ) as? HorizontalCountriesButtonCollectionViewCell else {
-                return UICollectionViewCell()
-            }
-            let country = viewModel.countries[indexPath.row]
-            cell.Setup(country: country.uppercased())
-            return cell
+            return makeCountryCell(collectionView, indexPath: indexPath)
+            
         case .list:
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ListCell",for: indexPath) as? NewsCardCollectionViewCell else {
-                return UICollectionViewCell()
-            }
-            let article = viewModel.articles[indexPath.row]
-            return verticalScrolling(cell: cell, article: article, row: indexPath.row)
+            return makeListCell(collectionView, indexPath: indexPath)
         }
     }
+    
+    private func makeHeaderCell(_ collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: "HeaderCell",
+            for: indexPath
+        ) as? HeaderCollectionViewCell else {
+            return UICollectionViewCell()
+        }
+        
+        cell.setup(title: "Top News")
+        return cell
+    }
+    
+    private func makeCountryCell(_ collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: "HorizontalCell",
+            for: indexPath
+        ) as? HorizontalCountriesButtonCollectionViewCell else {
+            return UICollectionViewCell()
+        }
+        
+        let country = viewModel.countries[indexPath.row]
+        cell.Setup(country: country.uppercased())
+        
+        return cell
+    }
+    
+    private func makeListCell(_ collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell {
+        
+        if shouldShowEmptyState() {
+            return makeEmptyCell(collectionView, indexPath: indexPath)
+        }
+        
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: "ListCell",
+            for: indexPath
+        ) as? NewsCardCollectionViewCell else {
+            return UICollectionViewCell()
+        }
+        
+        let article = viewModel.articles[indexPath.row]
+        return verticalScrolling(cell: cell, article: article, row: indexPath.row)
+    }
+    
+    private func makeEmptyCell(_ collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: "EmptyCell",
+            for: indexPath
+        ) as! EmptyCollectionViewCell
+        
+        cell.configure(message: "No articles for this country")
+        return cell
+    }
+    
+    private func shouldShowEmptyState() -> Bool {
+        return didSelectCountry && viewModel.articles.isEmpty
+    }
+    
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let section = Section(rawValue: indexPath.section)
         if section == .horizontal {
             let selectedCountry = viewModel.countries[indexPath.row]
+            didSelectCountry = true
             viewModel.getNews(country: selectedCountry)
         }
         if section == .list {
