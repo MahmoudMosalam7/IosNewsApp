@@ -6,14 +6,26 @@
 //
 
 import UIKit
+import Combine
 
 class NewsMarkVC: UIViewController {
     private var collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())
+    private lazy var viewModel = NewsMarkViewModel()
+    private var cancellables = Set<AnyCancellable>()
+    private let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
+        viewModel.fetchNews()
+        setupBinders()
     }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewModel.fetchNews()
+    }
+    
     func setupCollectionView(){
         view.addSubview(collectionView)
         collectionView.delegate = self
@@ -29,6 +41,7 @@ class NewsMarkVC: UIViewController {
         collectionView.register(HeaderCollectionViewCell.self, forCellWithReuseIdentifier: "HeaderCell")
         collectionView.register(NewsCardCollectionViewCell.self, forCellWithReuseIdentifier: "ListCell")
     }
+    
     func createLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { sectionIndex, _ in
             guard let section = Section(rawValue: sectionIndex) else { return nil }
@@ -64,6 +77,21 @@ class NewsMarkVC: UIViewController {
         return section
     }
 
+    func setupBinders(){
+        viewModel.$articles
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.collectionView.reloadData()
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: CoreDataManager.didChangeSavedNews)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.viewModel.fetchNews()
+            }
+            .store(in: &cancellables)
+    }
 }
 
 extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
@@ -80,7 +108,7 @@ extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
         case .horizontal:
             return 0
         case .list:
-            return 10
+            return viewModel.articles.count
         }
     }
     
@@ -107,12 +135,24 @@ extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
         
     }
     
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let section = Section(rawValue: indexPath.section)
+        if section == .list {
+            let article = viewModel.articles[indexPath.row]
+            if let destinationVC = self.mainStoryboard.instantiateViewController(withIdentifier: "NewsDetailsVC") as? NewsDetailsVC {
+                destinationVC.article = article
+                self.navigationController?.pushViewController(destinationVC, animated: true)
+            }
+        }
+    }
+    
     private func verticalScrolling(cell: NewsCardCollectionViewCell, row: Int) -> NewsCardCollectionViewCell {
+        let article = viewModel.articles[row]
         cell.setup(
-            title: "mahmoud",
-            subtitle: "article.author" ?? "Unknown",
-            imageURL: "article.urlToImage" ?? "",
-            publishedAt: "article.publishedAt"
+            title: article.title,
+            subtitle: article.author ?? "Unknown",
+            imageURL: article.urlToImage ?? "",
+            publishedAt: article.publishedAt
         )
         return cell
     }

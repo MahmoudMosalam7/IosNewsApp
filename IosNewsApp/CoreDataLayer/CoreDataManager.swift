@@ -9,6 +9,7 @@ import CoreData
 
 final class CoreDataManager {
     static let shared = CoreDataManager()
+    static let didChangeSavedNews = Notification.Name("CoreDataManager.didChangeSavedNews")
 
     private lazy var persistentContainer: NSPersistentContainer = {
         //Load coredata model to get all entities inside the model
@@ -47,6 +48,7 @@ final class CoreDataManager {
             
             do {
                 try self.context.save()
+                NotificationCenter.default.post(name: Self.didChangeSavedNews, object: nil)
                 return .success(true)
             } catch {
                 return .failure(.saveFailed)
@@ -79,6 +81,7 @@ final class CoreDataManager {
                     self.context.delete(managedObject)
                 
                     try self.context.save()
+                    NotificationCenter.default.post(name: Self.didChangeSavedNews, object: nil)
                     return .success(true)
                 } catch {
                     return .failure(.deleteFailed)
