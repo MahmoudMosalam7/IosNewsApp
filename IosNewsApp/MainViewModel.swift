@@ -16,19 +16,18 @@ class MainViewModel: ObservableObject {
     let countries = ["us", "eg", "gb", "fr", "de", "it"]
     func getNews(country: String = "us") {
         isLoading = true
-        
+        error = nil
         Task {
             let endpoint = Endpoint.getNewsByCountries(countryCode: country)
             let result: Result<NewsResponse, NetworkError> = await NetworkManager.shared.get(endpoint)
-            
             DispatchQueue.main.async {
                 self.isLoading = false
-                
                 switch result {
                 case .success(let response):
-                    self.articles = response.articles   // 🔥 STORE DATA
+                    self.error = nil
+                    self.articles = response.articles
                 case .failure(let err):
-                    self.error = err.localizedDescription
+                    self.error = err.errorDescription
                 }
             }
         }

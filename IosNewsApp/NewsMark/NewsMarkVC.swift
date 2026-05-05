@@ -13,12 +13,16 @@ class NewsMarkVC: UIViewController {
     private lazy var viewModel = NewsMarkViewModel()
     private var cancellables = Set<AnyCancellable>()
     private let mainStoryboard = UIStoryboard(name: "Main", bundle: nil)
+    private let errorView = ErrorView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
+        setupCollectionViewCell()
         viewModel.fetchNews()
         setupBinders()
+        setupErrorView()
+        setupErrorbinders()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -38,8 +42,13 @@ class NewsMarkVC: UIViewController {
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
+        
+    }
+    
+    func setupCollectionViewCell(){
         collectionView.register(HeaderCollectionViewCell.self, forCellWithReuseIdentifier: "HeaderCell")
         collectionView.register(NewsCardCollectionViewCell.self, forCellWithReuseIdentifier: "ListCell")
+        collectionView.register(EmptyCollectionViewCell.self, forCellWithReuseIdentifier: "EmptyCell")
     }
     
     func createLayout() -> UICollectionViewCompositionalLayout {
@@ -92,6 +101,37 @@ class NewsMarkVC: UIViewController {
             }
             .store(in: &cancellables)
     }
+    
+    func setupErrorView() {
+        view.addSubview(errorView)
+        errorView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            errorView.topAnchor.constraint(equalTo: view.topAnchor),
+            errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        errorView.onRetry = { [weak self] in
+            self?.viewModel.fetchNews()
+        }
+    }
+    
+    func setupErrorbinders() {
+        viewModel.$error
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] error in
+                guard let self = self else { return }
+                if let error = error {
+                    self.errorView.show(message: error)
+                    self.collectionView.isHidden = true
+                } else {
+                    self.errorView.hide()
+                    self.collectionView.isHidden = false
+                }
+            }
+            .store(in: &cancellables)
+    }
+
 }
 
 extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
@@ -108,7 +148,7 @@ extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
         case .horizontal:
             return 0
         case .list:
-            return viewModel.articles.count
+            return viewModel.articles.isEmpty ? 1 : viewModel.articles.count
         }
     }
     
@@ -126,16 +166,36 @@ extension NewsMarkVC :  UICollectionViewDelegate, UICollectionViewDataSource{
         case .horizontal:
             return UICollectionViewCell()
         case .list:
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ListCell",for: indexPath) as? NewsCardCollectionViewCell else {
-                return UICollectionViewCell()
+            if viewModel.articles.isEmpty {
+                return makeEmptyCell(collectionView, indexPath: indexPath)
             }
-            
-            return verticalScrolling(cell: cell, row: indexPath.row)
+            return makeNewsCell(collectionView, indexPath: indexPath)
+        }
+    }
+    
+    private func makeNewsCell(_ collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: "ListCell",
+            for: indexPath
+        ) as? NewsCardCollectionViewCell else {
+            return UICollectionViewCell()
         }
         
+        return verticalScrolling(cell: cell, row: indexPath.row)
+    }
+    
+    private func makeEmptyCell(_ collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: "EmptyCell",
+            for: indexPath
+        ) as! EmptyCollectionViewCell
+        
+        cell.configure(message: "No saved articles yet")
+        return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard !viewModel.articles.isEmpty else { return }
         let section = Section(rawValue: indexPath.section)
         if section == .list {
             let article = viewModel.articles[indexPath.row]
