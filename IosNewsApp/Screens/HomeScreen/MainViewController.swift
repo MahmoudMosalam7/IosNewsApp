@@ -8,7 +8,7 @@
 import UIKit
 import Combine
 
-class ViewController: UIViewController {
+class MainViewController: UIViewController {
     private var collectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewLayout())
     private lazy var viewModel = MainViewModel()
     private var cancellables = Set<AnyCancellable>()
@@ -142,7 +142,7 @@ class ViewController: UIViewController {
 
 }
 
-extension ViewController :  UICollectionViewDelegate, UICollectionViewDataSource{
+extension MainViewController :  UICollectionViewDelegate, UICollectionViewDataSource{
     
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return Section.allCases.count

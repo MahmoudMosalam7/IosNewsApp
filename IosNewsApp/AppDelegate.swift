@@ -20,7 +20,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func makeRootTabBarController() -> UITabBarController {
         let tabBarController = UITabBarController()
 
-        let homeVC = ViewController()
+        let homeVC = MainViewController()
         homeVC.tabBarItem = UITabBarItem(
             title: "Home",
             image: UIImage(systemName: "house"),
